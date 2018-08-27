@@ -1,0 +1,36 @@
+swagger: "2.0"
+info:
+  description: "Status Light web API."
+  version: "0.0.1"
+  title: "Status Light API"
+host: "127.0.0.1:8888"
+basePath: "/api/v1"
+tags:
+- name: "Status"
+  description: "Status control."
+schemes:
+- "http"
+paths:
+  /status:
+    post:
+      tags:
+      - "Status"
+      summary: "Set status."
+      parameters:
+        - in: body
+          description: Status parameters.
+          name: "body"
+          schema:
+            $ref: "#/definitions/Status"
+      responses:
+        405:
+          description: "Invalid input"
+definitions:
+  Status:
+    type: object
+    properties:
+      state:
+        type: boolean
+      statusId:
+        type: string
+      
