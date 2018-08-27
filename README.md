@@ -28,7 +28,9 @@ To see all available command line switches run:
 
 ## Set status
 
-To set single status:
+API is [documented](api/swagger.yaml) with Swagger specification.
+
+For example, to set single status:
 
 ```bash
 curl -X POST "http://127.0.0.1:8888/api/v1/status" -H "accept: application/json" -H "Content-Type: application/json" -d "{ \"state\": true, \"statusId\": \"string\"}"

@@ -24,7 +24,7 @@ const (
 )
 
 var (
-	// errTooMuchStatuses is returnes when statuses queue is full.
+	// errTooMuchStatuses is returned when statuses queue is full.
 	errTooMuchStatuses = errors.New("too much statuses")
 )
 
@@ -102,7 +102,7 @@ func (c *context) setLight(s statusType) error {
 		return err
 	}
 
-	req, err := http.NewRequest("PUT", url, bytes.NewBuffer(d))
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(d))
 	if err != nil {
 		return err
 	}
