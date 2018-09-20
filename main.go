@@ -35,6 +35,7 @@ type context struct {
 	stats      map[string]bool
 	client     *http.Client
 	colors     map[statusType]string
+	sequences  map[statusType]string
 	brightness int
 }
 
@@ -51,7 +52,12 @@ func (c *context) processStatus(s status) error {
 	}
 	c.stats[s.ID] = s.State
 	sts := c.getStatus()
-	return c.setLight(sts)
+	sequence, _ := c.sequences[sts]
+	if sequence != "" {
+		return c.setSequence(sequence)
+	}
+	color, _ := c.colors[sts]
+	return c.setLight(color)
 }
 
 // getStatus returns single status for all received statuses.
@@ -79,13 +85,8 @@ func (c *context) getStatus() statusType {
 }
 
 // setLight sets light through milightd.
-func (c *context) setLight(s statusType) error {
+func (c *context) setLight(color string) error {
 	url := fmt.Sprintf("http://%s:%d/api/v1/light", c.host, c.port)
-
-	color, ok := c.colors[s]
-	if !ok {
-		return fmt.Errorf("milightd client: unsupported status: %d", s)
-	}
 
 	var cmd = struct {
 		Color      string `json:"color"`
@@ -123,6 +124,44 @@ func (c *context) setLight(s statusType) error {
 	return nil
 }
 
+// setSequence sets sequence of lights through milightd.
+func (c *context) setSequence(sequence string) error {
+	url := fmt.Sprintf("http://%s:%d/api/v1/seqctrl", c.host, c.port)
+
+	var cmd = struct {
+		Name  string `json:"name"`
+		State string `json:"state"`
+	}{
+		Name:  sequence,
+		State: "running",
+	}
+
+	d, err := json.Marshal(cmd)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer(d))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("milightd client: unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
 func main() {
 	var mihost = flag.String("mihost", "127.0.0.1", "milightd network address")
 	var miport = flag.Int("miport", 8080, "milightd network port")
@@ -130,6 +169,9 @@ func main() {
 	var okColor = flag.String("ok-color", "green", "color for the OK status")
 	var unstableColor = flag.String("unstable-color", "yellow", "color for the unstable status")
 	var errorColor = flag.String("error-color", "red", "color for the error status")
+	var okSeq = flag.String("ok-seq", "", "sequence for the OK status")
+	var unstableSeq = flag.String("unstable-seq", "", "sequence for the unstable status")
+	var errorSeq = flag.String("error-seq", "", "sequence for the error status")
 	var brightness = flag.Int("brightness", 32, "brightness level")
 
 	flag.Parse()
@@ -145,6 +187,11 @@ func main() {
 			statusOK:       *okColor,
 			statusUnstable: *unstableColor,
 			statusError:    *errorColor,
+		},
+		sequences: map[statusType]string{
+			statusOK:       *okSeq,
+			statusUnstable: *unstableSeq,
+			statusError:    *errorSeq,
 		},
 		brightness: *brightness,
 	}
