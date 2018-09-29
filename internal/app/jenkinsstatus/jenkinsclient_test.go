@@ -3,11 +3,11 @@ package jenkinsstatus
 import "testing"
 
 func TestJenkinsGetStatus(t *testing.T) {
-	jenkins, err := NewJenkinsClient("http://127.0.0.1:8080", "jenkins", "jenkins.jenkins")
+	jenkins, err := NewJenkinsClient("http://127.0.0.1:8080", "admin", "admin")
 	if err != nil {
 		t.Fatal(err)
 	}
-	sts, err := jenkins.GetStatus("webapp-develop-config-tests", "webapp-develop")
+	sts, err := jenkins.GetStatus("first", "parent")
 	if err != nil {
 		t.Fatal(err)
 	}
