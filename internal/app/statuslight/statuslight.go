@@ -38,8 +38,8 @@ type StatusLight struct {
 	brightness int
 }
 
-// status stores status details
-type status struct {
+// Status stores status details
+type Status struct {
 	State bool   `json:"state"`
 	ID    string `json:"statusId"`
 }
@@ -60,7 +60,7 @@ func NewStatusLight(mihost string, miport int, colors, sequences StatusMap, brig
 }
 
 // processStatus process status received by http server.
-func (c *StatusLight) processStatus(s status) error {
+func (c *StatusLight) processStatus(s Status) error {
 	if len(c.stats) == maxStatuses {
 		return errTooMuchStatuses
 	}
@@ -175,76 +175,3 @@ func (c *StatusLight) setSequence(sequence string) error {
 
 	return nil
 }
-
-// func main() {
-// 	var mihost = flag.String("mihost", "127.0.0.1", "milightd network address")
-// 	var miport = flag.Int("miport", 8080, "milightd network port")
-// 	var port = flag.Int("port", 8888, "listening port")
-// 	var okColor = flag.String("ok-color", "green", "color for the OK status")
-// 	var unstableColor = flag.String("unstable-color", "yellow", "color for the unstable status")
-// 	var errorColor = flag.String("error-color", "red", "color for the error status")
-// 	var okSeq = flag.String("ok-seq", "", "sequence for the OK status")
-// 	var unstableSeq = flag.String("unstable-seq", "", "sequence for the unstable status")
-// 	var errorSeq = flag.String("error-seq", "", "sequence for the error status")
-// 	var brightness = flag.Int("brightness", 32, "brightness level")
-
-// 	flag.Parse()
-
-// 	ctx := context{
-// 		host:  *mihost,
-// 		port:  *miport,
-// 		stats: make(map[string]bool),
-// 		client: &http.Client{
-// 			Timeout: time.Second * 10,
-// 		},
-// 		colors: map[statusType]string{
-// 			StatusOK:       *okColor,
-// 			StatusUnstable: *unstableColor,
-// 			StatusError:    *errorColor,
-// 		},
-// 		sequences: map[statusType]string{
-// 			StatusOK:       *okSeq,
-// 			StatusUnstable: *unstableSeq,
-// 			StatusError:    *errorSeq,
-// 		},
-// 		brightness: *brightness,
-// 	}
-
-// 	r := mux.NewRouter()
-// 	v1 := r.PathPrefix("/api/v1/").Subrouter()
-
-// 	v1.HandleFunc("/status", func(w http.ResponseWriter, r *http.Request) {
-// 		statusHandler(w, r, &ctx)
-// 	}).Methods("POST")
-
-// 	srv := &http.Server{
-// 		Handler:      r,
-// 		Addr:         fmt.Sprintf(":%d", *port),
-// 		WriteTimeout: 15 * time.Second,
-// 		ReadTimeout:  15 * time.Second,
-// 	}
-
-// 	log.Printf("statuslight listening @ :%d\n", *port)
-// 	log.Fatal(srv.ListenAndServe())
-// }
-
-// func statusHandler(w http.ResponseWriter, r *http.Request, ctx *context) {
-// 	var s status
-// 	if r.Body == nil {
-// 		http.Error(w, "bad request", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	err := json.NewDecoder(r.Body).Decode(&s)
-// 	if err != nil {
-// 		http.Error(w, "bad request", http.StatusBadRequest)
-// 		return
-// 	}
-
-// 	err = ctx.processStatus(s)
-// 	if err != nil {
-// 		log.Printf("processStatus error: %s\n", err)
-// 		http.Error(w, "statuslight error", http.StatusInternalServerError)
-// 		return
-// 	}
-// }

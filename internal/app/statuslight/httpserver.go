@@ -45,7 +45,7 @@ func (s *HTTPServer) ListenAndServe() error {
 
 // statusHandler processes HTTP API calls.
 func statusHandler(w http.ResponseWriter, r *http.Request, statusLight *StatusLight) {
-	var s status
+	var s Status
 	if r.Body == nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
