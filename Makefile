@@ -8,11 +8,11 @@ GOTEST=$(GOCMD) test
 all: test build
 
 build:
-	$(MAKE) -C internal/app/statuslight
+	$(MAKE) -C cmd/statuslight
 
 test:
 	$(GOTEST) -v ./...
 
 clean:
 	$(GOCLEAN)
-	$(MAKE) clean -C internal/app/statuslight
+	$(MAKE) clean -C cmd/statuslight
