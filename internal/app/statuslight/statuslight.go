@@ -1,12 +1,10 @@
 package statuslight
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
-	"net/http"
-	"time"
+
+	"github.com/sgrzywna/milightd/pkg/milightdclient"
+	"github.com/sgrzywna/milightd/pkg/models"
 )
 
 type statusType int
@@ -15,8 +13,11 @@ type statusType int
 type StatusMap map[statusType]string
 
 const (
+	// StatusOK represents OK status.
 	StatusOK statusType = iota
+	// StatusUnstable represents unstable status.
 	StatusUnstable
+	// StatusError represents error status.
 	StatusError
 
 	maxStatuses = 16
@@ -29,10 +30,8 @@ var (
 
 // StatusLight represents status context, it stores all details necessary to calculate current status.
 type StatusLight struct {
-	host       string
-	port       int
 	stats      map[string]bool
-	client     *http.Client
+	client     *milightdclient.Client
 	colors     StatusMap
 	sequences  StatusMap
 	brightness int
@@ -45,14 +44,10 @@ type Status struct {
 }
 
 // NewStatusLight returns initialized StatusLight object.
-func NewStatusLight(mihost string, miport int, colors, sequences StatusMap, brightness int) *StatusLight {
+func NewStatusLight(miURL string, colors, sequences StatusMap, brightness int) *StatusLight {
 	return &StatusLight{
-		host:  mihost,
-		port:  miport,
-		stats: make(map[string]bool),
-		client: &http.Client{
-			Timeout: time.Second * 10,
-		},
+		stats:      make(map[string]bool),
+		client:     milightdclient.NewClient(miURL),
 		colors:     colors,
 		sequences:  sequences,
 		brightness: brightness,
@@ -100,78 +95,20 @@ func (c *StatusLight) getStatus() statusType {
 
 // setLight sets light through milightd.
 func (c *StatusLight) setLight(color string) error {
-	url := fmt.Sprintf("http://%s:%d/api/v1/light", c.host, c.port)
+	var light models.Light
 
-	var cmd = struct {
-		Color      string `json:"color"`
-		Brightness int    `json:"brightness"`
-		Switch     string `json:"switch"`
-	}{
-		Color:      color,
-		Brightness: c.brightness,
-		Switch:     "on",
-	}
+	light.SetColor(color)
+	light.SetBrightness(c.brightness)
+	light.SetSwitch(true)
 
-	d, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(d))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("milightd client: unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
+	return c.client.SetLight(light)
 }
 
 // setSequence sets sequence of lights through milightd.
 func (c *StatusLight) setSequence(sequence string) error {
-	url := fmt.Sprintf("http://%s:%d/api/v1/seqctrl", c.host, c.port)
-
-	var cmd = struct {
-		Name  string `json:"name"`
-		State string `json:"state"`
-	}{
+	state := models.SequenceState{
 		Name:  sequence,
-		State: "running",
+		State: models.SeqRunning,
 	}
-
-	d, err := json.Marshal(cmd)
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(d))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("milightd client: unexpected status code: %d", resp.StatusCode)
-	}
-
-	return nil
+	return c.client.SetSequenceState(state)
 }

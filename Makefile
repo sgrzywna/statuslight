@@ -9,6 +9,7 @@ all: test build
 
 build:
 	$(MAKE) -C cmd/statuslight
+	$(MAKE) -C cmd/jenkinsstatus
 
 test:
 	$(GOTEST) -v ./...
@@ -16,3 +17,4 @@ test:
 clean:
 	$(GOCLEAN)
 	$(MAKE) clean -C cmd/statuslight
+	$(MAKE) clean -C cmd/jenkinsstatus
