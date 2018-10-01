@@ -1,0 +1,31 @@
+# statuslight daemon settings
+[statuslight]
+url = "http://127.0.0.1:8888"
+
+# Jenkins settings
+[jenkins]
+url = "http://127.0.0.1:8080"
+username = "admin"
+password = "admin"
+# check period in seconds
+check_period = 30
+
+# Jenkins job
+[[job]]
+description = "First job from the parent project"
+path = "parent/first"
+
+# Jenkins job
+[[job]]
+description = "Second job from the parent project"
+path = "parent/second"
+
+# Jenkins job
+[[job]]
+description = "Fourth job from the parent project"
+path = "parent/fourth"
+
+# Jenkins job
+[[job]]
+description = "Third job from the inner project"
+path = "parent/inner/third"

@@ -2,17 +2,16 @@ GOCMD=go
 GOBUILD=$(GOCMD) build
 GOCLEAN=$(GOCMD) clean
 GOTEST=$(GOCMD) test
-
-.PHONY: all build test clean
+BINARY_NAME=statuslight
 
 all: test build
 
 build:
-	$(MAKE) -C cmd/statuslight
+	$(GOBUILD) -o $(BINARY_NAME) -v
 
 test:
 	$(GOTEST) -v ./...
 
 clean:
 	$(GOCLEAN)
-	$(MAKE) clean -C cmd/statuslight
+	rm -f $(BINARY_NAME)
