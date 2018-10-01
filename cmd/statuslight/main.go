@@ -8,8 +8,7 @@ import (
 )
 
 func main() {
-	var mihost = flag.String("mihost", "127.0.0.1", "milightd network address")
-	var miport = flag.Int("miport", 8080, "milightd network port")
+	var miURL = flag.String("miurl", "http://127.0.0.1:8080", "milightd URL")
 	var port = flag.Int("port", 8888, "listening port")
 	var okColor = flag.String("ok-color", "green", "color for the OK status")
 	var unstableColor = flag.String("unstable-color", "yellow", "color for the unstable status")
@@ -22,8 +21,7 @@ func main() {
 	flag.Parse()
 
 	statusLight := statuslight.NewStatusLight(
-		*mihost,
-		*miport,
+		*miURL,
 		statuslight.StatusMap{
 			statuslight.StatusOK:       *okColor,
 			statuslight.StatusUnstable: *unstableColor,

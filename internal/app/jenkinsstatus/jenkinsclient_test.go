@@ -11,7 +11,7 @@ func TestJenkinsGetStatus(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if sts != "success" {
+	if sts != "SUCCESS" {
 		t.Errorf("expected %s, got %s", "success", sts)
 	}
 }
