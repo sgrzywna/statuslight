@@ -39,6 +39,9 @@ func (s *JenkinsStatus) Close() {
 
 // probeLoop is the main processing loop.
 func (s *JenkinsStatus) probeLoop() {
+	// check status immediately
+	s.checkStatus()
+
 	for {
 		select {
 		case <-s.close:
@@ -54,7 +57,7 @@ func (s *JenkinsStatus) checkStatus() {
 	for _, job := range s.jobs {
 		sts, err := s.jenkins.GetStatus(job[0], job[1:]...)
 		if err != nil {
-			log.Printf("jenkins.GetStatus error: %s", err)
+			log.Printf("jenkins.GetStatus error: %s for %v", err, job)
 		} else {
 			s.rcv.OnStatus(job, sts)
 		}

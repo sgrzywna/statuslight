@@ -2,16 +2,42 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
-	"net/url"
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/sgrzywna/statuslight/internal/app/jenkinsstatus"
 	"github.com/sgrzywna/statuslight/internal/app/statuslightclient"
 )
 
+// config stores jenkinsstatus configuration.
+type config struct {
+	StatusLight statuslight `toml:"statuslight"`
+	Jenkins     jenkins     `toml:"jenkins"`
+	Jobs        []job       `toml:"job"`
+}
+
+// statuslight stores statuslight daemon configuration.
+type statuslight struct {
+	URL string `toml:"url"`
+}
+
+// jenkins stores Jenkins configuration.
+type jenkins struct {
+	URL         string `toml:"url"`
+	Username    string `toml:"username"`
+	Password    string `toml:"password"`
+	CheckPeriod int    `toml:"check_period"`
+}
+
+// job stores Jenkins job configuration.
+type job struct {
+	Description string `toml:"description"`
+	Path        string `toml:"path"`
+}
+
+// jenkinsStatusReceiver implements jenkinsstatus.Receiver interface.
 type jenkinsStatusReceiver struct {
 	client *statuslightclient.Client
 }
@@ -35,37 +61,44 @@ func (r *jenkinsStatusReceiver) OnStatus(job []string, status string) {
 }
 
 func main() {
-	var jenkinsURL = flag.String("jenkinsurl", "http://admin:admin@127.0.0.1:8080", "Jenkins URL")
-	var statusURL = flag.String("statusurl", "http://127.0.0.1:8888", "status light daemon URL")
-	var checkPeriod = flag.Int("checkperiod", 180, "check period in seconds")
+	var cfgPath = flag.String("config", "config.toml", "full path to the configuration file")
 
 	flag.Parse()
 
-	url, err := url.Parse(*jenkinsURL)
-	if err != nil {
-		log.Fatal(err)
+	var cfg config
+	if _, err := toml.DecodeFile(*cfgPath, &cfg); err != nil {
+		log.Fatalf("configuration error: %s", err)
 	}
 
-	strippedURL := fmt.Sprintf("%s://%s", url.Scheme, url.Host)
-	username := url.User.Username()
-	password, _ := url.User.Password()
-
-	jenkins, err := jenkinsstatus.NewJenkinsClient(strippedURL, username, password)
+	jenkins, err := jenkinsstatus.NewJenkinsClient(cfg.Jenkins.URL, cfg.Jenkins.Username, cfg.Jenkins.Password)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("jenkins error: %s", err)
 	}
 
-	statusLightClient := statuslightclient.NewClient(*statusURL)
+	statusLightClient := statuslightclient.NewClient(cfg.StatusLight.URL)
 
 	rcv := jenkinsStatusReceiver{
 		client: statusLightClient,
 	}
 
-	jobs := [][]string{
-		[]string{"webapp-develop-config-tests", "webapp-develop"},
+	var jobs [][]string
+
+	for _, job := range cfg.Jobs {
+		log.Printf("Loading '%s' (%v)", job.Description, job.Path)
+		path := strings.Split(job.Path, "/")
+		if len(path) == 0 {
+			continue
+		}
+		// last <-> first
+		path[0], path[len(path)-1] = path[len(path)-1], path[0]
+		// reverse(second, last)
+		for left, right := 1, len(path)-1; left < right; left, right = left+1, right-1 {
+			path[left], path[right] = path[right], path[left]
+		}
+		jobs = append(jobs, path)
 	}
 
-	jenkinsStatus := jenkinsstatus.NewJenkinsStatus(jenkins, jobs, time.Duration(*checkPeriod)*time.Second, &rcv)
+	jenkinsStatus := jenkinsstatus.NewJenkinsStatus(jenkins, jobs, time.Duration(cfg.Jenkins.CheckPeriod)*time.Second, &rcv)
 	defer jenkinsStatus.Close()
 
 	select {}
