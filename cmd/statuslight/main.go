@@ -34,6 +34,7 @@ func main() {
 		},
 		*brightness,
 	)
+	defer statusLight.Close()
 
 	srv := statuslight.NewHTTPServer(*port, statusLight)
 
