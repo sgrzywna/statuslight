@@ -47,7 +47,6 @@ type StatusLight struct {
 	sequences  StatusMap
 	brightness int
 	quit       chan struct{}
-	done       chan struct{}
 }
 
 // NewStatusLight returns initialized StatusLight object.
@@ -58,6 +57,7 @@ func NewStatusLight(miURL string, colors, sequences StatusMap, brightness int) *
 		colors:     colors,
 		sequences:  sequences,
 		brightness: brightness,
+		quit:       make(chan struct{}),
 	}
 	go statusLight.statusLoop()
 	return &statusLight
@@ -65,8 +65,8 @@ func NewStatusLight(miURL string, colors, sequences StatusMap, brightness int) *
 
 // Close terminates status loop.
 func (c *StatusLight) Close() {
-	close(c.quit)
-	<-c.done
+	// Blocks until received.
+	c.quit <- struct{}{}
 }
 
 // processStatus process status received by http server.
@@ -90,7 +90,6 @@ func (c *StatusLight) statusLoop() {
 	for {
 		select {
 		case <-c.quit:
-			c.done <- struct{}{}
 			return
 		case <-time.After(setStatusPeriod):
 			sts := c.getStatus()
